@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1118">
+    <title>World Chokepoints — Atlas Geopolítico</title>
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    >
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            background: #0b1118;
+            color: #e8eef5;
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+            --surface: #111a24;
+            --surface-raised: #172330;
+            --border: #263545;
+            --muted: #91a1b2;
+            --blue: #52b7ff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            background: #0b1118;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            color: inherit;
+        }
+
+        .app {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            min-height: 560px;
+        }
+
+        .sidebar {
+            z-index: 500;
+            display: flex;
+            flex: 0 0 340px;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+        }
+
+        .brand {
+            padding: 23px 22px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            display: block;
+            width: 38px;
+            height: 38px;
+            flex: 0 0 38px;
+            border-radius: 50%;
+            box-shadow: inset -5px -4px 8px #07131d99, 0 0 14px #38a5ff22;
+            overflow: hidden;
+            background: #102536;
+        }
+
+        .brand-mark img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 1px solid #4388ad;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .brand h1 {
+            margin: 0;
+            color: #f3f7fb;
+            font-size: 15px;
+            letter-spacing: 1.35px;
+        }
+
+        .brand p {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+            letter-spacing: 0.3px;
+        }
+
+        .sidebar-content {
+            min-height: 0;
+            overflow-y: auto;
+            scrollbar-color: #314252 transparent;
+            scrollbar-width: thin;
+        }
+
+        .sidebar-section {
+            padding: 18px 18px 0;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .section-heading h2 {
+            margin: 0;
+            color: #dce5ed;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+        }
+
+        .section-heading span {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box svg {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 16px;
+            height: 16px;
+            color: #7f91a3;
+            pointer-events: none;
+        }
+
+        .search-box input {
+            width: 100%;
+            height: 40px;
+            padding: 0 12px 0 38px;
+            color: #edf3f8;
+            background: #0c141d;
+            border: 1px solid #2a3948;
+            border-radius: 8px;
+            outline: none;
+            font-size: 12px;
+        }
+
+        .search-box input::placeholder {
+            color: #778898;
+        }
+
+        .search-box input:focus {
+            border-color: #398ac2;
+            box-shadow: 0 0 0 3px #278ed01c;
+        }
+
+        .category-list {
+            display: grid;
+            gap: 3px;
+        }
+
+        .category-option {
+            display: flex;
+            min-height: 36px;
+            align-items: center;
+            gap: 9px;
+            padding: 5px 7px;
+            color: #c3ced8;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .category-option:hover {
+            background: #1a2734;
+        }
+
+        .category-option input {
+            width: 14px;
+            height: 14px;
+            margin: 0;
+            accent-color: var(--blue);
+        }
+
+        .category-dot {
+            width: 8px;
+            height: 8px;
+            flex: 0 0 8px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .category-count {
+            margin-left: auto;
+            color: #8798a8;
+            font-size: 10px;
+        }
+
+        .places-section {
+            padding-bottom: 15px;
+        }
+
+        .places-list {
+            display: grid;
+            gap: 5px;
+        }
+
+        .place-button {
+            display: flex;
+            width: 100%;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 11px 10px;
+            text-align: left;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .place-button:hover,
+        .place-button[aria-current="true"] {
+            background: #192633;
+            border-color: #2b3c4c;
+        }
+
+        .place-symbol {
+            display: grid;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            place-items: center;
+            border: 1px solid currentColor;
+            border-radius: 8px;
+            font-size: 17px;
+            line-height: 1;
+        }
+
+        .place-copy {
+            min-width: 0;
+            padding-top: 1px;
+        }
+
+        .place-name {
+            display: block;
+            overflow: hidden;
+            color: #e6edf3;
+            font-size: 12px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .place-region {
+            display: block;
+            margin-top: 4px;
+            color: #8d9eae;
+            font-size: 10px;
+        }
+
+        .empty-list {
+            padding: 18px 8px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 13px 18px;
+            color: #7f91a1;
+            background: #0e161f;
+            border-top: 1px solid var(--border);
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .map-wrap {
+            position: relative;
+            min-width: 0;
+            flex: 1;
+            background: #0c151e;
+        }
+
+        #map {
+            position: absolute;
+            inset: 0;
+            background: #0c151e;
+        }
+
+        #map,
+        #map .leaflet-grab,
+        #map .leaflet-dragging,
+        #map .leaflet-interactive,
+        #map .leaflet-marker-icon,
+        #map .leaflet-tooltip {
+            cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACnUlEQVR4AeyUT2sTURTF70taY5u2JA1Kx7iw/ikILoLQ4kZIlsGduFSToAsFFy7cShL9An4ApRG3ou66zOCuSRfiRlAw2YzpphWkGmKTed6TOsMkMyFvpgURMswvM+++e889uZNJiP7xMTEwmcBkApMJ/B8TaH3fy2/v7lX9gBqVP1mlCQhJOSKRrtW3lDCMVvqghsYeSgagUqvXKVe4q4TxzUCJEsoGnGqZF18IWDHcA2vt5xrIgJ8G43IDGajeuUDAEsc9sNZ+roEM+GkwLtc2gNdm1GvGIqnkqSS9XH+uxNrqKpdQapRea+dnCQnANoAF8au20wmlP/+YGoBjsfhSki5dXlPiV0/Qdjsc89BJowc5DoeBsG6SeB8O0f6rr8fo2aeIzeMPM/Royx9PPh636y2tREQSemiJaMnyYBvQ4jNNIUQuNi2nb539be0f2fXhxU5fS4hesX/z98M2gDVMSCELKws9unZ6H6Ej4cqJLkET2lp8XneKDhjAhhafqxBJ/erJXhtFiB0GjP12f6JSP9AeVHMZwLYU4cLslLnLhRLrw5A71zG7koylxbmMl46nATyKcMi8uRiR4mmqTXh+QUDt+XkzBC2v5oh5GsCGxs9KSionIqa+stANBGq9njv0LUYaQML92mzlwWa0jPGpcG8zWhjO1/q/Kah542ngxoZMX9+QkjcbJlGV7xuM/e4OS/nNd9ZzD+eSiBvl0ZSjTabMFBicRd5zmUDMbz5qIAhcBhBkym+yYpkpMRVugF8wzMAEppGHCNPg3CLjNx9fjsuIXAbQkBn4pu+yookYJ2f4vUTxOlejMQQy2OO1fTrzOXiGGc7n/xqO8sma/Kl4vs4K/W1WZHgimI7gxsuIjSrHHucI5AO+d+X/AQAA///SgzwGAAAABklEQVQDAFDa7cJjy/oXAAAAAElFTkSuQmCC") 16 16, pointer !important;
+        }
+
+        #map .leaflet-interactive:hover,
+        #map .leaflet-tooltip.leaflet-interactive:hover {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 19h24l-4 7H9z' fill='%2352b7ff' stroke='%23e8eef5' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M10 12h11v7H10z' fill='%23111a24' stroke='%23e8eef5' stroke-width='1.5'/%3E%3Cpath d='M13 14h2v2h-2zm4 0h2v2h-2z' fill='%2352b7ff'/%3E%3Cpath d='M7 29c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0 4 1.5 6 0' fill='none' stroke='%2352b7ff' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M22 12V6' stroke='%23ffd166' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='m22 6 5 2-5 2z' fill='%23ffd166'/%3E%3C/svg%3E") 16 19, pointer !important;
+        }
+
+        .map-status {
+            position: absolute;
+            z-index: 400;
+            bottom: 18px;
+            left: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            color: #bdc9d4;
+            background: #101923e8;
+            border: 1px solid #30404e;
+            border-radius: 7px;
+            font-size: 10px;
+            backdrop-filter: blur(8px);
+        }
+
+        .status-light {
+            width: 7px;
+            height: 7px;
+            background: #61d9a1;
+            border-radius: 50%;
+            box-shadow: 0 0 9px #61d9a1aa;
+        }
+
+        .detail-panel {
+            position: absolute;
+            z-index: 450;
+            top: 18px;
+            right: 18px;
+            width: min(560px, calc(100% - 36px));
+            max-height: calc(100% - 36px);
+            overflow-y: auto;
+            background: #111a24f2;
+            border: 1px solid #314252;
+            border-radius: 12px;
+            box-shadow: 0 16px 48px #0006;
+            backdrop-filter: blur(14px);
+        }
+
+        .detail-empty {
+            padding: 22px;
+        }
+
+        .detail-empty .eyebrow {
+            margin: 0 0 10px;
+            color: var(--blue);
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        .detail-empty h2 {
+            margin: 0;
+            font-size: 17px;
+            line-height: 1.3;
+        }
+
+        .detail-empty p {
+            margin: 9px 0 0;
+            color: #9cabb8;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .detail-content {
+            display: none;
+        }
+
+        .detail-content.is-visible {
+            display: block;
+        }
+
+        .detail-image {
+            margin: 0;
+            background: #0c141d;
+            border-bottom: 1px solid #2a3947;
+        }
+
+        .detail-image-stage {
+            position: relative;
+            overflow: hidden;
+            background: #172330;
+        }
+
+        .detail-image img {
+            display: block;
+            width: 100%;
+            height: 360px;
+            object-fit: cover;
+            background: #172330;
+        }
+
+        .detail-image img[hidden] {
+            display: none;
+        }
+
+        .detail-image figcaption {
+            padding: 8px 18px;
+            color: #99aaba;
+            background: #0e1720;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .detail-image a {
+            color: #8bcaff;
+            text-decoration: none;
+        }
+
+        .detail-image a:hover {
+            text-decoration: underline;
+        }
+
+        .detail-image-fallback {
+            display: grid;
+            height: 360px;
+            padding: 20px;
+            place-items: center;
+            color: #a7b6c4;
+            background: linear-gradient(135deg, #172330, #0d151e);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .carousel-button {
+            position: absolute;
+            z-index: 1;
+            top: 50%;
+            display: grid;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            place-items: center;
+            color: #fff;
+            background: #0a111bd9;
+            border: 1px solid #ffffff55;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 30px;
+            line-height: 1;
+            transform: translateY(-50%);
+        }
+
+        .carousel-button:hover {
+            background: #1b3448;
+        }
+
+        .carousel-button:focus-visible,
+        .carousel-dot:focus-visible {
+            outline: 2px solid #8bcaff;
+            outline-offset: 3px;
+        }
+
+        .carousel-button-previous {
+            left: 14px;
+        }
+
+        .carousel-button-next {
+            right: 14px;
+        }
+
+        .detail-image-caption {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 9px 18px;
+            color: #99aaba;
+            background: #0e1720;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .carousel-caption-copy {
+            display: grid;
+            gap: 3px;
+        }
+
+        .carousel-view-label {
+            color: #d7e2eb;
+            font-weight: 600;
+        }
+
+        .carousel-indicators {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .carousel-dot {
+            width: 8px;
+            height: 8px;
+            padding: 0;
+            background: #617283;
+            border: 0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .carousel-dot[aria-pressed="true"] {
+            width: 20px;
+            background: #52b7ff;
+            border-radius: 5px;
+        }
+
+        .detail-image-fallback[hidden] {
+            display: none;
+        }
+
+        .detail-top {
+            position: relative;
+            padding: 22px 58px 18px 24px;
+            border-bottom: 1px solid #2a3947;
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: grid;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            place-items: center;
+            color: #c4d0dc;
+            background: #1a2734;
+            border: 1px solid #344655;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .detail-close:hover {
+            color: #fff;
+            background: #2a3c4c;
+        }
+
+        .detail-close:focus-visible {
+            outline: 2px solid #8bcaff;
+            outline-offset: 2px;
+        }
+
+        .detail-kicker {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 9px;
+            color: var(--blue);
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+        }
+
+        .detail-kicker .category-dot {
+            width: 7px;
+            height: 7px;
+            flex-basis: 7px;
+        }
+
+        .detail-top h2 {
+            margin: 0;
+            color: #f3f7fa;
+            font-size: 24px;
+            line-height: 1.25;
+        }
+
+        .detail-location {
+            margin: 7px 0 0;
+            color: #98a8b7;
+            font-size: 11px;
+        }
+
+        .detail-body {
+            display: grid;
+            gap: 18px;
+            padding: 20px 24px 26px;
+        }
+
+        .detail-block h3 {
+            margin: 0 0 6px;
+            color: #8799aa;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .detail-block p,
+        .detail-block ul {
+            margin: 0;
+            color: #d0d9e1;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .detail-block ul {
+            padding-left: 16px;
+        }
+
+        .detail-block li + li {
+            margin-top: 3px;
+        }
+
+        .countries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .country-tag {
+            padding: 5px 8px;
+            color: #c5d3df;
+            background: #1b2a37;
+            border: 1px solid #2b3d4c;
+            border-radius: 5px;
+            font-size: 10px;
+        }
+
+        .map-error {
+            position: absolute;
+            z-index: 600;
+            inset: 20px 20px auto;
+            padding: 13px 16px;
+            color: #ffe2dc;
+            background: #51251feF;
+            border: 1px solid #a34a3b;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .leaflet-container {
+            font: inherit;
+        }
+
+        .leaflet-control-zoom a {
+            color: #e4edf4 !important;
+            background: #121d28 !important;
+            border-color: #304150 !important;
+        }
+
+        .leaflet-control-attribution {
+            color: #b6c2cd !important;
+            background: #101923d9 !important;
+        }
+
+        .leaflet-control-attribution a {
+            color: #75bfff !important;
+        }
+
+        .leaflet-tooltip {
+            color: #edf4fa;
+            background: #111a24;
+            border: 1px solid #35495a;
+            box-shadow: 0 4px 14px #0006;
+            font-size: 11px;
+        }
+
+        .leaflet-tooltip-top:before {
+            border-top-color: #35495a;
+        }
+
+        @media (max-width: 760px) {
+            body {
+                overflow: auto;
+            }
+
+            .app {
+                height: auto;
+                min-height: 100vh;
+                flex-direction: column;
+            }
+
+            .sidebar {
+                flex: initial;
+                max-height: 45vh;
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .brand {
+                padding: 14px 16px;
+            }
+
+            .sidebar-content {
+                max-height: calc(45vh - 82px);
+            }
+
+            .sidebar-section {
+                padding: 14px 16px 0;
+            }
+
+            .places-section {
+                padding-bottom: 12px;
+            }
+
+            .sidebar-footer {
+                display: none;
+            }
+
+            .map-wrap {
+                min-height: 55vh;
+                flex: 1;
+            }
+
+            #map {
+                min-height: 55vh;
+            }
+
+            .detail-panel {
+                top: 12px;
+                right: 12px;
+                width: min(420px, calc(100% - 24px));
+                max-height: min(55vh, 500px);
+            }
+
+            .detail-image img,
+            .detail-image-fallback {
+                height: 160px;
+            }
+
+            .carousel-button {
+                width: 36px;
+                height: 36px;
+                font-size: 25px;
+            }
+
+            .detail-image-caption {
+                align-items: flex-start;
+                padding: 8px 12px;
+            }
+
+            .map-status {
+                bottom: 12px;
+                left: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" aria-label="Explorar pontos estratégicos">
+            <header class="brand">
+                <div class="brand-line">
+                    <div class="brand-mark" aria-hidden="true">
+                        <img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/330px-The_Earth_seen_from_Apollo_17.jpg" alt="Planeta Terra visto do espaço" width="38" height="38">
+                    </div>
+                    <div>
+                        <h1>GEOPOLÍTICA DOS OCEANOS</h1>
+                        <p>Atlas geopolítico mundial</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="sidebar-content">
+                <section class="sidebar-section" aria-labelledby="search-title">
+                    <div class="section-heading">
+                        <h2 id="search-title">Pesquisar</h2>
+                    </div>
+                    <label class="search-box">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"></circle>
+                            <path d="m16 16 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                        </svg>
+                        <input id="search-input" type="search" placeholder="Nome, região ou país..." autocomplete="off" aria-label="Pesquisar por nome, região ou país">
+                    </label>
+                </section>
+
+                <section class="sidebar-section" aria-labelledby="categories-title">
+                    <div class="section-heading">
+                        <h2 id="categories-title">Categorias</h2>
+                        <button id="reset-filters" type="button" style="padding:0;color:#73bfff;background:none;border:0;cursor:pointer;font-size:10px">Limpar filtros</button>
+                    </div>
+                    <div id="category-list" class="category-list"></div>
+                </section>
+
+                <section class="sidebar-section places-section" aria-labelledby="places-title">
+                    <div class="section-heading">
+                        <h2 id="places-title">Pontos estratégicos</h2>
+                        <span id="results-count" aria-live="polite"></span>
+                    </div>
+                    <div id="places-list" class="places-list"></div>
+                </section>
+            </div>
+
+            <footer class="sidebar-footer">
+                Conteúdo introdutório para fins educacionais. Contextos geopolíticos podem mudar e devem ser verificados em fontes atualizadas.
+            </footer>
+        </aside>
+
+        <main class="map-wrap" aria-label="Mapa-múndi interativo">
+            <div id="map" role="application" aria-label="Mapa interativo com pontos estratégicos"></div>
+            <div id="map-error" class="map-error" role="alert" hidden></div>
+            <aside id="detail-panel" class="detail-panel" aria-live="polite" aria-label="Detalhes do ponto selecionado">
+                <div id="detail-empty" class="detail-empty">
+                    <p class="eyebrow">Visão global</p>
+                    <h2>Explore pontos estratégicos</h2>
+                    <p>Selecione um marcador no mapa ou um local na lista para conhecer sua localização, importância e contexto geopolítico.</p>
+                </div>
+                <div id="detail-content" class="detail-content"></div>
+            </aside>
+            <div class="map-status"><span class="status-light" aria-hidden="true"></span><span id="map-status-text">21 pontos no atlas</span></div>
+        </main>
+    </div>
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+    <script>
+        const categories = {
+            maritime_chokepoint: { label: "Chokepoints marítimos", color: "#38bdf8", symbol: "M" },
+            strategic_canal: { label: "Canais estratégicos", color: "#a78bfa", symbol: "C" },
+            geopolitical_tension: { label: "Tensão geopolítica", color: "#fb7185", symbol: "T" },
+            conflict_zone: { label: "Zonas de conflito", color: "#f97316", symbol: "!" },
+            strategic_border: { label: "Fronteiras estratégicas", color: "#facc15", symbol: "F" },
+            energy_region: { label: "Regiões energéticas", color: "#34d399", symbol: "E" },
+            trade_corridor: { label: "Corredores comerciais", color: "#60a5fa", symbol: "R" },
+            natural_region: { label: "Regiões naturais estratégicas", color: "#a3e635", symbol: "N" }
+        };
+
+        const places = [
+            {
+                id: "ormuz",
+                name: "Estreito de Ormuz",
+                icon: "🛢️",
+                category: "maritime_chokepoint",
+                tags: ["energy_region"],
+                region: "Golfo Pérsico · Oriente Médio",
+                countries: ["Irã", "Omã"],
+                coordinates: [26.56, 56.25],
+                imageBounds: [51.5, 23, 59.5, 28.5],
+                historicalContext: "A posição entre o Golfo Pérsico e o Oceano Índico tornou Ormuz uma passagem comercial estratégica por séculos. Com a expansão da produção e do transporte de petróleo no século XX, o estreito passou a ocupar papel central na segurança energética e nas relações entre os países do Golfo e potências externas.",
+                importance: "Passagem entre o Golfo Pérsico e o Golfo de Omã, central para as rotas marítimas de energia.",
+                economicImpact: "Uma parcela expressiva do petróleo e do gás natural liquefeito comercializados por via marítima transita pela região.",
+                geopoliticalContext: "A posição entre o Irã e a Península Arábica confere ao estreito relevância para a segurança energética e a diplomacia regional.",
+                goods: ["Petróleo bruto", "Derivados de petróleo", "Gás natural liquefeito"],
+                risks: ["Tensões regionais", "Interrupção da navegação", "Impactos nos mercados de energia"]
+            },
+            {
+                id: "suez",
+                name: "Canal de Suez",
+                icon: "🚢",
+                category: "strategic_canal",
+                tags: ["trade_corridor"],
+                region: "Egito · Nordeste da África",
+                countries: ["Egito"],
+                coordinates: [30.46, 32.34],
+                imageBounds: [31, 28.5, 33.5, 32.5],
+                historicalContext: "Inaugurado em 1869, o canal transformou a rota marítima entre Europa e Ásia. A nacionalização pelo presidente egípcio Gamal Abdel Nasser, em 1956, provocou a Crise de Suez; após a Guerra dos Seis Dias, a navegação ficou interrompida de 1967 a 1975. Esses episódios marcaram debates sobre soberania, comércio e influência internacional.",
+                importance: "Canal artificial que conecta o Mar Mediterrâneo ao Mar Vermelho e encurta rotas entre Europa e Ásia.",
+                economicImpact: "É uma das principais passagens do comércio marítimo global, reduzindo a necessidade de contornar a África.",
+                geopoliticalContext: "Sua operação depende da administração egípcia e da segurança da navegação entre o Mediterrâneo e o Mar Vermelho.",
+                goods: ["Contêineres", "Petróleo e derivados", "Produtos manufaturados"],
+                risks: ["Bloqueios ou acidentes", "Instabilidade no entorno regional", "Desvios de rota e atrasos logísticos"]
+            },
+            {
+                id: "malacca",
+                name: "Estreito de Malaca",
+                icon: "📦",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor"],
+                region: "Sudeste Asiático",
+                countries: ["Indonésia", "Malásia", "Singapura"],
+                coordinates: [3.5, 99.5],
+                imageBounds: [97, 0, 103, 6],
+                historicalContext: "O estreito integra há séculos as redes comerciais entre o Oceano Índico e o Leste Asiático. O crescimento de portos como Malaca e Singapura, sob diferentes períodos de influência regional e colonial, consolidou a passagem como corredor estratégico; hoje, sua segurança depende também da cooperação entre os Estados costeiros.",
+                importance: "Passagem entre os oceanos Índico e Pacífico, junto a alguns dos maiores centros portuários e industriais da Ásia.",
+                economicImpact: "É uma rota importante para o comércio entre o Leste Asiático, o Oriente Médio, a Europa e outras regiões.",
+                geopoliticalContext: "A segurança marítima e a cooperação entre os países costeiros são essenciais para a continuidade do tráfego.",
+                goods: ["Contêineres", "Petróleo", "Eletrônicos e bens manufaturados"],
+                risks: ["Congestionamento marítimo", "Acidentes de navegação", "Pirataria e segurança marítima"]
+            },
+            {
+                id: "panama",
+                name: "Canal do Panamá",
+                icon: "🚢",
+                category: "strategic_canal",
+                tags: ["trade_corridor"],
+                region: "América Central",
+                countries: ["Panamá"],
+                coordinates: [9.08, -79.68],
+                imageBounds: [-82, 7, -78, 11],
+                historicalContext: "A construção francesa começou no século XIX e foi concluída pelos Estados Unidos; o canal abriu em 1914. Sua história está ligada à separação do Panamá da Colômbia em 1903, à influência norte-americana na zona do canal e aos Tratados Torrijos–Carter, que estabeleceram a transferência gradual do controle ao Panamá, concluída em 1999.",
+                importance: "Canal que conecta os oceanos Atlântico e Pacífico através do istmo do Panamá.",
+                economicImpact: "Oferece uma rota direta entre costas oceânicas, evitando a longa viagem ao redor da América do Sul.",
+                geopoliticalContext: "A capacidade de operação depende de infraestrutura, gestão hídrica e condições climáticas.",
+                goods: ["Contêineres", "Grãos", "Gás natural liquefeito"],
+                risks: ["Restrições de calado e tráfego", "Secas e disponibilidade de água", "Atrasos logísticos"]
+            },
+            {
+                id: "bab-el-mandeb",
+                name: "Bab el-Mandeb",
+                icon: "🚢",
+                category: "conflict_zone",
+                tags: ["maritime_chokepoint", "trade_corridor"],
+                region: "Mar Vermelho · Chifre da África",
+                countries: ["Iêmen", "Djibuti", "Eritreia"],
+                coordinates: [12.58, 43.33],
+                imageBounds: [41, 10, 46, 15],
+                historicalContext: "Bab el-Mandeb liga o Mar Vermelho às rotas do Oceano Índico e ganhou importância adicional com a abertura do Canal de Suez, em 1869. Sua localização entre o Chifre da África e a Península Arábica fez da segurança da navegação uma questão geopolítica recorrente, especialmente em períodos de conflito e instabilidade regional.",
+                importance: "Estreito que liga o Golfo de Áden ao Mar Vermelho e, por extensão, à rota do Canal de Suez.",
+                economicImpact: "Integra uma das principais rotas marítimas entre o Oceano Índico, o Mediterrâneo e a Europa.",
+                geopoliticalContext: "A proximidade de áreas de instabilidade torna a segurança da navegação uma preocupação internacional recorrente.",
+                goods: ["Contêineres", "Petróleo e derivados", "Carga geral"],
+                risks: ["Conflitos e instabilidade regional", "Ameaças à navegação comercial", "Desvios de rota"]
+            },
+            {
+                id: "gibraltar",
+                name: "Estreito de Gibraltar",
+                icon: "🌊",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor"],
+                region: "Europa · Norte da África",
+                countries: ["Espanha", "Marrocos", "Reino Unido (Gibraltar)"],
+                coordinates: [35.96, -5.6],
+                imageBounds: [-8, 34.5, -4, 38],
+                historicalContext: "Gibraltar foi capturado por forças anglo-holandesas em 1704 e cedido à Grã-Bretanha pelo Tratado de Utrecht, em 1713; a soberania permanece reivindicada pela Espanha. O estreito conecta o Atlântico ao Mediterrâneo e teve relevância militar e comercial em diferentes períodos da história europeia e mediterrânea.",
+                importance: "Passagem natural entre o Oceano Atlântico e o Mar Mediterrâneo.",
+                economicImpact: "Concentra tráfego marítimo entre portos atlânticos, mediterrâneos e rotas para o Canal de Suez.",
+                geopoliticalContext: "Sua posição entre Europa e África e o estatuto de Gibraltar fazem da região um espaço de interesse estratégico.",
+                goods: ["Contêineres", "Combustíveis", "Carga a granel"],
+                risks: ["Congestionamento marítimo", "Acidentes de navegação", "Sensibilidade diplomática e ambiental"]
+            },
+            {
+                id: "taiwan",
+                name: "Estreito de Taiwan",
+                icon: "💾",
+                category: "geopolitical_tension",
+                tags: ["maritime_chokepoint", "trade_corridor"],
+                region: "Leste Asiático · Pacífico Ocidental",
+                countries: ["China", "Taiwan"],
+                coordinates: [24.5, 119.5],
+                imageBounds: [117, 21, 123, 27],
+                historicalContext: "A divisão política entre a República Popular da China e as autoridades de Taiwan se consolidou após a guerra civil chinesa, em 1949. As crises do Estreito de Taiwan de 1954–1955 e 1958 envolveram demonstrações militares e atenção internacional; desde então, a região combina tensão política com rotas comerciais e cadeias tecnológicas globais.",
+                importance: "Espaço marítimo entre Taiwan e a costa continental chinesa, próximo a importantes rotas do Pacífico Ocidental.",
+                economicImpact: "A região está ligada a cadeias globais de transporte e à indústria de alta tecnologia do Leste Asiático.",
+                geopoliticalContext: "A situação política entre Pequim e Taipé é objeto de divergência e tensão; o estreito é acompanhado por atores regionais e internacionais.",
+                goods: ["Eletrônicos", "Semicondutores", "Contêineres"],
+                risks: ["Escalada de tensões", "Interrupção de rotas comerciais", "Impactos em cadeias globais de suprimentos"]
+            },
+            {
+                id: "turkish-straits",
+                name: "Estreitos de Bósforo e Dardanelos",
+                icon: "🌉",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor"],
+                region: "Turquia · ligação entre o Mar Negro e o Mediterrâneo",
+                countries: ["Turquia"],
+                coordinates: [41.05, 29.05],
+                imageBounds: [25, 39, 30.5, 42],
+                historicalContext: "O Bósforo e os Dardanelos formam a passagem entre o Mar Negro e o Mediterrâneo. O controle dos estreitos foi central para a história do Império Otomano e da Turquia moderna. A Convenção de Montreux, de 1936, regula a passagem de navios e embarcações militares; a Campanha de Galípoli, na Primeira Guerra Mundial, destacou sua importância estratégica.",
+                importance: "Única ligação marítima entre o Mar Negro e o Mediterrâneo, através do Mar de Mármara.",
+                economicImpact: "É uma rota importante para cargas dos países do Mar Negro, incluindo grãos, petróleo e outros produtos.",
+                geopoliticalContext: "A Turquia administra a passagem conforme a Convenção de Montreux, que estabelece regras distintas para navios mercantes e militares.",
+                goods: ["Grãos", "Petróleo e derivados", "Carga a granel"],
+                risks: ["Congestionamento e acidentes em águas estreitas", "Tensões envolvendo a segurança do Mar Negro", "Restrições de navegação"]
+            },
+            {
+                id: "bering",
+                name: "Estreito de Bering",
+                icon: "❄️",
+                category: "maritime_chokepoint",
+                tags: ["natural_region", "trade_corridor"],
+                region: "Entre o Alasca e o extremo leste da Rússia",
+                countries: ["Estados Unidos", "Rússia"],
+                coordinates: [65.8, -168.9],
+                imageBounds: [-175, 63, -164, 68],
+                historicalContext: "O estreito separa a Sibéria do Alasca e conecta os oceanos Pacífico e Ártico. A região também é associada às antigas migrações humanas entre a Ásia e as Américas. A compra do Alasca pelos Estados Unidos, em 1867, consolidou a fronteira marítima entre os dois países; durante a Guerra Fria, essa proximidade ganhou dimensão estratégica.",
+                importance: "Passagem entre o Oceano Pacífico e o Oceano Ártico, localizada entre as ilhas Diomedes.",
+                economicImpact: "O interesse por rotas árticas e recursos regionais cresce, mas as condições de gelo e clima limitam a navegação.",
+                geopoliticalContext: "Estados Unidos e Rússia são vizinhos no estreito; segurança, soberania, comunidades indígenas e mudanças ambientais influenciam a região.",
+                goods: ["Carga regional", "Recursos naturais", "Produtos transportados por rotas árticas"],
+                risks: ["Gelo marinho e clima extremo", "Infraestrutura limitada", "Tensões estratégicas e impactos ambientais"]
+            },
+            {
+                id: "magellan",
+                name: "Estreito de Magalhães",
+                icon: "⛵",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor", "natural_region"],
+                region: "Sul do Chile · extremo meridional da América do Sul",
+                countries: ["Chile"],
+                coordinates: [-52.8, -73.5],
+                imageBounds: [-76, -56, -67, -49],
+                historicalContext: "A expedição de Fernão de Magalhães atravessou o estreito em 1520, abrindo uma passagem entre os oceanos Atlântico e Pacífico antes da construção do Canal do Panamá. A rota foi importante para a navegação global durante séculos; a abertura do canal em 1914 reduziu seu tráfego interoceânico, embora continue relevante para a navegação regional.",
+                importance: "Passagem natural abrigada entre os oceanos Atlântico e Pacífico, dentro do território chileno.",
+                economicImpact: "Oferece uma rota alternativa ao Canal do Panamá para alguns navios, além de atender ao tráfego regional e à atividade portuária.",
+                geopoliticalContext: "O Chile exerce soberania sobre o estreito; sua posição e as condições de navegação o tornam importante para a conectividade do extremo sul.",
+                goods: ["Carga a granel", "Combustíveis", "Abastecimento e carga regional"],
+                risks: ["Clima severo e ventos fortes", "Navegação complexa", "Custos e tempo de travessia"]
+            },
+            {
+                id: "dover",
+                name: "Estreito de Dover",
+                icon: "🚢",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor"],
+                region: "Canal da Mancha · Europa Ocidental",
+                countries: ["Reino Unido", "França"],
+                coordinates: [51.0, 1.5],
+                imageBounds: [-1, 49.5, 3.5, 52.5],
+                historicalContext: "No ponto mais estreito do Canal da Mancha, Dover está há séculos no centro das ligações entre as ilhas britânicas e a Europa continental. A região foi uma linha de defesa durante as guerras europeias e teve papel logístico na evacuação de Dunquerque, em 1940. O Eurotúnel, inaugurado em 1994, acrescentou uma ligação ferroviária sob o canal.",
+                importance: "Passagem entre o Canal da Mancha e o Mar do Norte, uma das rotas marítimas mais movimentadas do mundo.",
+                economicImpact: "Concentra tráfego de navios comerciais e ferries e complementa a ligação ferroviária do Eurotúnel entre Reino Unido e França.",
+                geopoliticalContext: "A travessia conecta diretamente o Reino Unido à Europa continental e é relevante para comércio, transporte e segurança marítima.",
+                goods: ["Contêineres", "Carga rodada e ferries", "Petróleo e carga a granel"],
+                risks: ["Tráfego marítimo intenso", "Colisões e congestionamento", "Condições meteorológicas adversas"]
+            },
+            {
+                id: "oresund",
+                name: "Estreito de Öresund",
+                icon: "🌉",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor"],
+                region: "Entre a Dinamarca e a Suécia · acesso ao Mar Báltico",
+                countries: ["Dinamarca", "Suécia"],
+                coordinates: [55.8, 12.7],
+                imageBounds: [11, 54.5, 13.5, 57],
+                historicalContext: "O Öresund é uma das passagens que ligam o Mar Báltico ao Mar do Norte. A Dinamarca cobrou os chamados Sound Dues de navios que cruzavam o estreito entre 1429 e 1857, uma fonte histórica de receita e poder. A abertura da ligação fixa de Öresund, em 2000, aprofundou a conexão entre Copenhague e Malmö.",
+                importance: "Passagem marítima entre a Dinamarca e a Suécia que conecta o Mar Báltico às águas do Kattegat e do Mar do Norte.",
+                economicImpact: "Serve ao transporte marítimo regional e à integração econômica entre a região de Copenhague e o sul da Suécia.",
+                geopoliticalContext: "A navegação é regida pelo direito internacional; a ponte e o túnel de Öresund também fazem da região um corredor transfronteiriço de transporte.",
+                goods: ["Contêineres", "Carga a granel", "Produtos industriais e regionais"],
+                risks: ["Congestionamento em águas estreitas", "Acidentes de navegação", "Impactos ambientais no Mar Báltico"]
+            },
+            {
+                id: "sunda",
+                name: "Estreito de Sunda",
+                icon: "🌋",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor", "natural_region"],
+                region: "Entre Sumatra e Java · Indonésia",
+                countries: ["Indonésia"],
+                coordinates: [-5.9, 105.8],
+                imageBounds: [104, -7, 108, -4],
+                historicalContext: "O Estreito de Sunda liga o Mar de Java ao Oceano Índico e integra antigas rotas comerciais do arquipélago indonésio. A erupção do Krakatoa, em 1883, nas ilhas do estreito, teve efeitos devastadores nas comunidades costeiras e chamou atenção internacional para a geologia vulcânica da região.",
+                importance: "Passagem entre as ilhas de Sumatra e Java e rota alternativa ao Estreito de Malaca para a navegação regional.",
+                economicImpact: "É utilizado por embarcações que conectam o Oceano Índico, o Mar de Java e os portos do arquipélago indonésio.",
+                geopoliticalContext: "A passagem está inteiramente em águas indonésias e sua navegação é influenciada pela geografia vulcânica e pela proximidade de áreas densamente povoadas.",
+                goods: ["Carga regional", "Petróleo e derivados", "Produtos agrícolas e manufaturados"],
+                risks: ["Atividade vulcânica e tsunamis", "Profundidade e navegação restritivas", "Tráfego marítimo regional"]
+            },
+            {
+                id: "lombok",
+                name: "Estreito de Lombok",
+                icon: "🐠",
+                category: "maritime_chokepoint",
+                tags: ["trade_corridor", "natural_region"],
+                region: "Entre Bali e Lombok · Indonésia",
+                countries: ["Indonésia"],
+                coordinates: [-8.5, 115.7],
+                imageBounds: [114, -10, 118, -7],
+                historicalContext: "O Estreito de Lombok separa Bali de Lombok e atravessa a Linha de Wallace, importante fronteira biogeográfica observada por naturalistas no século XIX. Por ser mais profundo que o Estreito de Sunda e permitir a passagem de navios de maior calado, também funciona como alternativa estratégica às rotas mais rasas do arquipélago.",
+                importance: "Passagem profunda entre o Oceano Índico e o Mar de Bali, utilizada por navios que não podem cruzar estreitos mais rasos.",
+                economicImpact: "Atende à navegação internacional e regional entre os oceanos Índico e Pacífico e serve como rota alternativa a Malaca e Sunda.",
+                geopoliticalContext: "O estreito está em águas indonésias e sua posição integra as rotas marítimas do arquipélago e as conexões entre os dois oceanos.",
+                goods: ["Petróleo e derivados", "Carga a granel", "Contêineres"],
+                risks: ["Correntes fortes e marés", "Atividade sísmica e vulcânica", "Conservação de ecossistemas marinhos"]
+            },
+            {
+                id: "kerch",
+                name: "Estreito de Kerch",
+                icon: "🌉",
+                category: "geopolitical_tension",
+                tags: ["maritime_chokepoint", "trade_corridor"],
+                region: "Entre o Mar Negro e o Mar de Azov",
+                countries: ["Rússia", "Ucrânia"],
+                coordinates: [45.35, 36.55],
+                imageBounds: [34, 44, 39, 47],
+                historicalContext: "O estreito conecta o Mar Negro ao Mar de Azov e tem sido disputado em diferentes períodos. Desde 2014, a anexação da Crimeia pela Rússia e a disputa sobre o controle da região alteraram a situação política e de navegação; em 2018, um confronto entre forças russas e ucranianas no estreito elevou as tensões. A soberania sobre a Crimeia é internacionalmente contestada.",
+                importance: "Passagem estreita que conecta o Mar de Azov ao Mar Negro e dá acesso aos portos da região.",
+                economicImpact: "O tráfego afeta exportações e abastecimento dos portos do Mar de Azov, incluindo grãos e produtos industriais.",
+                geopoliticalContext: "O controle e o regime de navegação são objeto de disputa entre Rússia e Ucrânia; a situação jurídica e de segurança permanece sensível.",
+                goods: ["Grãos", "Aço e produtos industriais", "Carga regional"],
+                risks: ["Conflito armado e restrições de navegação", "Bloqueios e inspeções", "Minas e riscos à segurança marítima"]
+            },
+            {
+                id: "drake",
+                name: "Passagem de Drake",
+                icon: "🧊",
+                category: "maritime_chokepoint",
+                tags: ["natural_region", "trade_corridor"],
+                region: "Entre o Cabo Horn e a Península Antártica",
+                countries: ["Chile", "Antártida (regida pelo Sistema do Tratado da Antártida)"],
+                coordinates: [-58.5, -65],
+                imageBounds: [-72, -64, -58, -53],
+                historicalContext: "A passagem recebeu o nome de Francis Drake, embora a travessia europeia registrada tenha sido realizada pela expedição de Willem Schouten em 1616. Antes da abertura do Canal do Panamá, em 1914, era uma das rotas entre os oceanos Atlântico e Pacífico. A região também é importante para a circulação oceânica e para a pesquisa antártica.",
+                importance: "Corredor oceânico entre o extremo sul da América do Sul e a Antártida, conectando os oceanos Atlântico e Pacífico.",
+                economicImpact: "Hoje é percorrida principalmente por navios de pesquisa, abastecimento antártico e turismo polar, além de tráfego oceânico de passagem.",
+                geopoliticalContext: "A navegação ocorre em alto-mar; as atividades na Antártida estão sujeitas ao Sistema do Tratado da Antártida e a regras de proteção ambiental.",
+                goods: ["Abastecimento de bases antárticas", "Equipamentos científicos", "Suprimentos para navios polares"],
+                risks: ["Ondas e ventos extremos", "Águas frias e isolamento", "Riscos ambientais em ecossistemas polares"]
+            },
+            {
+                id: "cook",
+                name: "Estreito de Cook",
+                icon: "⛵",
+                category: "maritime_chokepoint",
+                tags: ["natural_region", "trade_corridor"],
+                region: "Entre as ilhas Norte e Sul · Nova Zelândia",
+                countries: ["Nova Zelândia"],
+                coordinates: [-41.25, 174.5],
+                imageBounds: [172, -43, 177, -39],
+                historicalContext: "O estreito separa as duas principais ilhas da Nova Zelândia e foi nomeado em referência às viagens do explorador James Cook, que navegou pela região em 1770. A travessia liga Wellington e Picton e permanece importante para o transporte doméstico, apesar das correntes e do clima instável.",
+                importance: "Passagem marítima que conecta o Mar da Tasmânia ao Oceano Pacífico e separa as ilhas Norte e Sul.",
+                economicImpact: "É essencial para ferries, carga e conexões entre os principais centros da Nova Zelândia.",
+                geopoliticalContext: "A passagem está sob jurisdição neozelandesa e é um elo vital da infraestrutura e da conectividade nacional.",
+                goods: ["Carga doméstica", "Veículos e passageiros", "Produtos agrícolas e industriais"],
+                risks: ["Correntes fortes e mar agitado", "Ventos e baixa visibilidade", "Interrupções do serviço de ferry"]
+            },
+            {
+                id: "hudson",
+                name: "Estreito de Hudson",
+                icon: "❄️",
+                category: "maritime_chokepoint",
+                tags: ["natural_region", "trade_corridor"],
+                region: "Entre a Ilha de Baffin e o norte de Quebec · Canadá",
+                countries: ["Canadá"],
+                coordinates: [63, -67],
+                imageBounds: [-75, 60, -62, 66],
+                historicalContext: "O estreito leva o nome do explorador Henry Hudson, que navegou pela região em 1610 durante a busca de uma passagem para a Ásia. A entrada para a Baía de Hudson tornou-se importante para o comércio de peles e para a Companhia da Baía de Hudson; hoje, a navegação sazonal e os direitos dos povos Inuit são centrais para as discussões sobre o Ártico canadense.",
+                importance: "Acesso entre o Atlântico Norte e a Baía de Hudson, com navegação fortemente condicionada pelo gelo marinho.",
+                economicImpact: "A temporada de navegação permite transporte para comunidades remotas e cargas ligadas à economia do norte do Canadá.",
+                geopoliticalContext: "O estreito está em águas canadenses; o desenvolvimento da navegação ártica envolve soberania, proteção ambiental e direitos indígenas.",
+                goods: ["Abastecimento de comunidades", "Minérios e recursos regionais", "Carga sazonal"],
+                risks: ["Gelo marinho e clima severo", "Busca e salvamento complexos", "Impactos ambientais e culturais"]
+            },
+            {
+                id: "kashmir",
+                name: "Caxemira",
+                icon: "⛰️",
+                category: "strategic_border",
+                tags: ["geopolitical_tension", "natural_region"],
+                region: "Sul da Ásia · Himalaia",
+                countries: ["Índia", "Paquistão", "China"],
+                coordinates: [34.0, 76.0],
+                imageBounds: [72, 30, 81, 37],
+                historicalContext: "A partição da Índia britânica, em 1947, deixou o antigo principado de Jammu e Caxemira em disputa. Índia e Paquistão travaram conflitos na região, que também inclui áreas sob administração chinesa; a Linha de Controle separa áreas administradas por Índia e Paquistão, sem resolver as reivindicações concorrentes.",
+                importance: "Região montanhosa de fronteiras e reivindicações territoriais concorrentes no encontro do Himalaia com o Karakoram.",
+                economicImpact: "A geografia afeta recursos hídricos, conectividade regional e o acesso a corredores montanhosos.",
+                geopoliticalContext: "A região é administrada em partes por diferentes países e permanece disputada; esta descrição não implica endosso a reivindicações territoriais.",
+                goods: ["Água de bacias glaciais", "Produtos agrícolas regionais"],
+                risks: ["Tensão militar", "Dificuldades de acesso e infraestrutura", "Impactos sobre comunidades locais"]
+            },
+            {
+                id: "persian-gulf",
+                name: "Golfo Pérsico",
+                icon: "🛢️",
+                category: "energy_region",
+                tags: ["maritime_chokepoint"],
+                region: "Oriente Médio",
+                countries: ["Irã", "Iraque", "Kuwait", "Arábia Saudita", "Bahrein", "Catar", "Emirados Árabes Unidos"],
+                coordinates: [27.0, 51.0],
+                imageBounds: [47, 23, 57, 31],
+                historicalContext: "O Golfo Pérsico foi uma rota de comércio e navegação muito antes da era moderna do petróleo. A expansão da exploração petrolífera no século XX alterou o peso econômico e estratégico da região; a Guerra Irã–Iraque (1980–1988) e os ataques a navios durante a chamada Guerra dos Petroleiros mostraram como conflitos podem afetar a navegação e os mercados de energia.",
+                importance: "Bacia marítima cercada por importantes produtores de petróleo e gás natural.",
+                economicImpact: "A produção e exportação de energia da região têm grande influência sobre o abastecimento e os mercados globais.",
+                geopoliticalContext: "Interesses energéticos, segurança marítima e relações entre os Estados costeiros moldam sua importância estratégica.",
+                goods: ["Petróleo bruto", "Gás natural", "Derivados de petróleo"],
+                risks: ["Tensões regionais", "Dependência de rotas marítimas", "Riscos ambientais associados à extração e ao transporte"]
+            },
+            {
+                id: "arctic",
+                name: "Região do Ártico",
+                icon: "🧊",
+                category: "natural_region",
+                tags: ["trade_corridor", "energy_region"],
+                region: "Oceano Ártico",
+                countries: ["Canadá", "Dinamarca (Groenlândia)", "Estados Unidos", "Finlândia", "Islândia", "Noruega", "Rússia", "Suécia"],
+                coordinates: [82.0, 0.0],
+                imageBounds: [-30, 72, 30, 85],
+                historicalContext: "Povos indígenas vivem no Ártico há milênios; a região também ganhou importância estratégica durante a Guerra Fria, quando rotas polares encurtavam distâncias entre potências. A redução sazonal do gelo ampliou o interesse em navegação e recursos, mas as rotas seguem sujeitas a condições severas, regras internacionais e direitos dos povos locais.",
+                importance: "Região polar de grande relevância ambiental, científica e estratégica, com rotas marítimas condicionadas pelo gelo.",
+                economicImpact: "O recuo sazonal do gelo desperta interesse em navegação e recursos, embora as condições permaneçam exigentes e variáveis.",
+                geopoliticalContext: "Os Estados árticos cooperam em temas regionais e também acompanham questões de soberania, segurança e acesso a recursos.",
+                goods: ["Recursos naturais", "Carga regional", "Equipamentos científicos"],
+                risks: ["Ecossistemas vulneráveis", "Condições extremas de navegação", "Disputas sobre jurisdição e recursos"]
+            }
+        ];
+
+        const searchInput = document.querySelector("#search-input");
+        const categoryList = document.querySelector("#category-list");
+        const placesList = document.querySelector("#places-list");
+        const resultsCount = document.querySelector("#results-count");
+        const statusText = document.querySelector("#map-status-text");
+        const detailEmpty = document.querySelector("#detail-empty");
+        const detailContent = document.querySelector("#detail-content");
+        const mapError = document.querySelector("#map-error");
+        const enabledCategories = new Set(Object.keys(categories));
+        let selectedPlaceId = null;
+        let map;
+        let markers;
+
+        function renderCategoryFilters() {
+            categoryList.replaceChildren();
+
+            for (const [id, category] of Object.entries(categories)) {
+                const count = places.filter(place => place.category === id || place.tags.includes(id)).length;
+                const label = document.createElement("label");
+                label.className = "category-option";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = true;
+                checkbox.dataset.category = id;
+                checkbox.addEventListener("change", () => {
+                    if (checkbox.checked) {
+                        enabledCategories.add(id);
+                    } else {
+                        enabledCategories.delete(id);
+                    }
+                    renderPlaces();
+                });
+
+                const dot = document.createElement("span");
+                dot.className = "category-dot";
+                dot.style.color = category.color;
+                dot.style.backgroundColor = category.color;
+
+                const name = document.createElement("span");
+                name.textContent = category.label;
+
+                const countLabel = document.createElement("span");
+                countLabel.className = "category-count";
+                countLabel.textContent = String(count);
+
+                label.append(checkbox, dot, name, countLabel);
+                categoryList.append(label);
+            }
+        }
+
+        function getVisiblePlaces() {
+            const query = searchInput.value.trim().toLocaleLowerCase("pt-BR");
+
+            return places.filter(place => {
+                const matchesCategory = enabledCategories.has(place.category)
+                    || place.tags.some(tag => enabledCategories.has(tag));
+                const searchableText = [
+                    place.name,
+                    place.region,
+                    ...place.countries,
+                    categories[place.category].label
+                ].join(" ").toLocaleLowerCase("pt-BR");
+
+                return matchesCategory && searchableText.includes(query);
+            });
+        }
+
+        function renderPlaces() {
+            const visiblePlaces = getVisiblePlaces();
+            placesList.replaceChildren();
+            resultsCount.textContent = `${visiblePlaces.length} ${visiblePlaces.length === 1 ? "local" : "locais"}`;
+            statusText.textContent = `${visiblePlaces.length} ${visiblePlaces.length === 1 ? "ponto visível" : "pontos visíveis"} no atlas`;
+
+            if (visiblePlaces.length === 0) {
+                const emptyMessage = document.createElement("p");
+                emptyMessage.className = "empty-list";
+                emptyMessage.textContent = "Nenhum ponto corresponde à busca e aos filtros selecionados.";
+                placesList.append(emptyMessage);
+            } else {
+                for (const place of visiblePlaces) {
+                    const category = categories[place.category];
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "place-button";
+                    button.setAttribute("aria-current", String(place.id === selectedPlaceId));
+                    button.setAttribute("aria-label", `Ver ${place.name}, ${place.region}`);
+                    button.addEventListener("click", () => selectPlace(place.id));
+
+                    const symbol = document.createElement("span");
+                    symbol.className = "place-symbol";
+                    symbol.style.color = category.color;
+                    symbol.style.backgroundColor = `${category.color}12`;
+                    symbol.textContent = place.icon;
+                    symbol.setAttribute("aria-hidden", "true");
+
+                    const copy = document.createElement("span");
+                    copy.className = "place-copy";
+
+                    const name = document.createElement("span");
+                    name.className = "place-name";
+                    name.textContent = place.name;
+
+                    const region = document.createElement("span");
+                    region.className = "place-region";
+                    region.textContent = place.region;
+
+                    copy.append(name, region);
+                    button.append(symbol, copy);
+                    placesList.append(button);
+                }
+            }
+
+            renderMarkers(visiblePlaces);
+        }
+
+        function addDetailBlock(container, title, content) {
+            const section = document.createElement("section");
+            section.className = "detail-block";
+
+            const heading = document.createElement("h3");
+            heading.textContent = title;
+            section.append(heading);
+
+            if (Array.isArray(content)) {
+                const list = document.createElement("ul");
+                for (const item of content) {
+                    const entry = document.createElement("li");
+                    entry.textContent = item;
+                    list.append(entry);
+                }
+                section.append(list);
+            } else {
+                const paragraph = document.createElement("p");
+                paragraph.textContent = content;
+                section.append(paragraph);
+            }
+
+            container.append(section);
+        }
+
+        function createImageryUrl(bounds) {
+            const imageParameters = new URLSearchParams({
+                bbox: bounds.join(","),
+                bboxSR: "4326",
+                size: "800,520",
+                imageSR: "4326",
+                format: "jpg",
+                f: "image"
+            });
+            return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?${imageParameters}`;
+        }
+
+        function showPlaceDetails(place) {
+            const category = categories[place.category];
+            detailEmpty.hidden = true;
+            detailContent.className = "detail-content is-visible";
+            detailContent.replaceChildren();
+
+            const top = document.createElement("div");
+            top.className = "detail-top";
+
+            const closeButton = document.createElement("button");
+            closeButton.type = "button";
+            closeButton.className = "detail-close";
+            closeButton.setAttribute("aria-label", "Fechar detalhes do ponto");
+            closeButton.textContent = "×";
+            closeButton.addEventListener("click", closePlaceDetails);
+
+            const kicker = document.createElement("div");
+            kicker.className = "detail-kicker";
+            const dot = document.createElement("span");
+            dot.className = "category-dot";
+            dot.style.color = category.color;
+            dot.style.backgroundColor = category.color;
+            const categoryName = document.createElement("span");
+            categoryName.textContent = category.label;
+            kicker.append(dot, categoryName);
+
+            const title = document.createElement("h2");
+            title.textContent = place.name;
+            const location = document.createElement("p");
+            location.className = "detail-location";
+            location.textContent = place.region;
+            top.append(closeButton, kicker, title, location);
+
+            const imageFrame = document.createElement("figure");
+            imageFrame.className = "detail-image";
+
+            const imageStage = document.createElement("div");
+            imageStage.className = "detail-image-stage";
+
+            const image = document.createElement("img");
+            image.alt = `Imagem de satélite da região de ${place.name}`;
+            image.loading = "eager";
+            image.decoding = "async";
+            image.fetchPriority = "high";
+            image.onload = () => {
+                image.hidden = false;
+                imageFallback.hidden = true;
+            };
+            image.onerror = () => {
+                image.hidden = true;
+                imageFallback.hidden = false;
+            };
+
+            const imageFallback = document.createElement("div");
+            imageFallback.className = "detail-image-fallback";
+            imageFallback.hidden = true;
+            imageFallback.textContent = "A imagem de satélite desta região não está disponível.";
+
+            const [minLongitude, minLatitude, maxLongitude, maxLatitude] = place.imageBounds;
+            const [centerLatitude, centerLongitude] = place.coordinates;
+            const carouselSlides = [
+                { label: "Enquadramento do ponto", scale: 0.5 },
+                { label: "Entorno regional", scale: 1 },
+                { label: "Detalhe próximo", scale: 0.25 }
+            ];
+            let activeSlide = 0;
+
+            function showCarouselSlide(slideIndex) {
+                activeSlide = (slideIndex + carouselSlides.length) % carouselSlides.length;
+                const slide = carouselSlides[activeSlide];
+                const halfLongitudeSpan = (maxLongitude - minLongitude) * slide.scale / 2;
+                const halfLatitudeSpan = (maxLatitude - minLatitude) * slide.scale / 2;
+                const slideBounds = [
+                    centerLongitude - halfLongitudeSpan,
+                    centerLatitude - halfLatitudeSpan,
+                    centerLongitude + halfLongitudeSpan,
+                    centerLatitude + halfLatitudeSpan
+                ];
+
+                image.alt = `Imagem de satélite de ${place.name} — ${slide.label.toLowerCase()}`;
+                viewLabel.textContent = slide.label;
+                imageFallback.hidden = true;
+                image.hidden = true;
+                image.src = createImageryUrl(slideBounds);
+
+                for (const [index, indicator] of indicators.entries()) {
+                    indicator.setAttribute("aria-pressed", String(index === activeSlide));
+                }
+            }
+
+            const previousButton = document.createElement("button");
+            previousButton.type = "button";
+            previousButton.className = "carousel-button carousel-button-previous";
+            previousButton.setAttribute("aria-label", "Imagem anterior");
+            previousButton.textContent = "‹";
+            previousButton.addEventListener("click", () => showCarouselSlide(activeSlide - 1));
+
+            const nextButton = document.createElement("button");
+            nextButton.type = "button";
+            nextButton.className = "carousel-button carousel-button-next";
+            nextButton.setAttribute("aria-label", "Próxima imagem");
+            nextButton.textContent = "›";
+            nextButton.addEventListener("click", () => showCarouselSlide(activeSlide + 1));
+
+            imageStage.append(image, imageFallback, previousButton, nextButton);
+
+            const imageCaption = document.createElement("figcaption");
+            imageCaption.className = "detail-image-caption";
+            const captionCopy = document.createElement("span");
+            captionCopy.className = "carousel-caption-copy";
+            const viewLabel = document.createElement("span");
+            viewLabel.className = "carousel-view-label";
+            const sourceLine = document.createElement("span");
+            sourceLine.append("Imagem de satélite: ");
+            const imageSource = document.createElement("a");
+            imageSource.href = "https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9";
+            imageSource.target = "_blank";
+            imageSource.rel = "noreferrer";
+            imageSource.textContent = "Esri World Imagery";
+            sourceLine.append(
+                imageSource,
+                " · Fontes: Esri, Maxar, Earthstar Geographics, CNES/Airbus, USDA, USGS e colaboradores."
+            );
+            captionCopy.append(viewLabel, sourceLine);
+
+            const indicators = [];
+            const indicatorGroup = document.createElement("div");
+            indicatorGroup.className = "carousel-indicators";
+            indicatorGroup.setAttribute("role", "group");
+            indicatorGroup.setAttribute("aria-label", "Selecionar imagem");
+            for (const [index, slide] of carouselSlides.entries()) {
+                const indicator = document.createElement("button");
+                indicator.type = "button";
+                indicator.className = "carousel-dot";
+                indicator.setAttribute("aria-label", slide.label);
+                indicator.setAttribute("aria-pressed", "false");
+                indicator.addEventListener("click", () => showCarouselSlide(index));
+                indicators.push(indicator);
+                indicatorGroup.append(indicator);
+            }
+
+            imageCaption.append(captionCopy, indicatorGroup);
+            imageFrame.append(imageStage, imageCaption);
+            showCarouselSlide(0);
+
+            const body = document.createElement("div");
+            body.className = "detail-body";
+
+            const countrySection = document.createElement("section");
+            countrySection.className = "detail-block";
+            const countryHeading = document.createElement("h3");
+            countryHeading.textContent = "Países e territórios";
+            const countryTags = document.createElement("div");
+            countryTags.className = "countries";
+            for (const country of place.countries) {
+                const tag = document.createElement("span");
+                tag.className = "country-tag";
+                tag.textContent = country;
+                countryTags.append(tag);
+            }
+            countrySection.append(countryHeading, countryTags);
+
+            body.append(countrySection);
+            addDetailBlock(body, "História e contexto geopolítico", place.historicalContext);
+            addDetailBlock(body, "Importância estratégica", place.importance);
+            addDetailBlock(body, "Impacto econômico", place.economicImpact);
+            addDetailBlock(body, "Contexto geopolítico", place.geopoliticalContext);
+            addDetailBlock(body, "Principais cargas e recursos", place.goods);
+            addDetailBlock(body, "Riscos e desafios", place.risks);
+            detailContent.append(top, imageFrame, body);
+        }
+
+        function closePlaceDetails() {
+            selectedPlaceId = null;
+            detailContent.className = "detail-content";
+            detailContent.replaceChildren();
+            detailEmpty.hidden = false;
+            renderPlaces();
+        }
+
+        function selectPlace(placeId) {
+            const place = places.find(item => item.id === placeId);
+            if (!place) {
+                return;
+            }
+
+            selectedPlaceId = placeId;
+            showPlaceDetails(place);
+            renderPlaces();
+            map.flyTo(place.coordinates, Math.max(map.getZoom(), 5), { duration: 0.7 });
+        }
+
+        function renderMarkers(visiblePlaces) {
+            if (!markers) {
+                return;
+            }
+
+            markers.clearLayers();
+            for (const place of visiblePlaces) {
+                const category = categories[place.category];
+                const marker = L.circleMarker(place.coordinates, {
+                    radius: place.id === selectedPlaceId ? 10 : 7,
+                    color: "#eaf6ff",
+                    weight: place.id === selectedPlaceId ? 2 : 1,
+                    fillColor: category.color,
+                    fillOpacity: 0.95
+                });
+                marker.bindTooltip(place.name, { direction: "top", offset: [0, -7] });
+                marker.on("click", () => selectPlace(place.id));
+                markers.addLayer(marker);
+            }
+        }
+
+        document.querySelector("#reset-filters").addEventListener("click", () => {
+            searchInput.value = "";
+            enabledCategories.clear();
+            for (const checkbox of categoryList.querySelectorAll('input[type="checkbox"]')) {
+                checkbox.checked = true;
+                enabledCategories.add(checkbox.dataset.category);
+            }
+            renderPlaces();
+            searchInput.focus();
+        });
+
+        searchInput.addEventListener("input", renderPlaces);
+        renderCategoryFilters();
+
+        if (typeof L === "undefined") {
+            mapError.hidden = false;
+            mapError.textContent = "Não foi possível carregar a biblioteca do mapa. Verifique sua conexão e atualize a página.";
+            statusText.textContent = "Mapa indisponível";
+        } else {
+            map = L.map("map", {
+                center: [20, 0],
+                zoom: 2,
+                minZoom: 2,
+                maxZoom: 12,
+                worldCopyJump: true,
+                zoomControl: false
+            });
+
+            L.control.zoom({ position: "bottomright" }).addTo(map);
+            const imageryAttribution = 'Imagery &copy; Esri, Maxar, Earthstar Geographics, CNES/Airbus, USDA, USGS, and the GIS User Community';
+            const labelsAttribution = 'Boundaries and places &copy; Esri';
+            L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+                attribution: imageryAttribution,
+                maxZoom: 19
+            }).addTo(map);
+            L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+                attribution: labelsAttribution,
+                maxZoom: 19
+            }).addTo(map);
+
+            markers = L.layerGroup().addTo(map);
+            renderPlaces();
+        }
+    </script>
+</body>
+</html>
